@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PosAIdon Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #1e1e2e; color: white; display: flex; }
+        #sidebar { width: 250px; background: #2a2a3c; padding: 10px; height: 100vh; overflow-y: auto; }
+        #chat-container { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; }
+        #title { text-align: center; font-size: 20px; font-weight: bold; padding: 10px; background: #34344c; }
+        #subtitle { text-align: center; font-size: 14px; color: #ccc; margin-bottom: 10px; }
+        #chat-box { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .chat-message { padding: 8px; margin: 5px 0; border-radius: 5px; }
+        .user { background: #3a3a5c; align-self: flex-end; text-align: right; }
+        .bot { background: #2a2a4c; }
+        #input-area { display: flex; padding: 10px; background: #1e1e2e; }
+        input { flex-grow: 1; padding: 8px; border: none; border-radius: 5px; }
+        button { background: #4a4a7c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+        .chat-title { font-size: 16px; margin-bottom: 10px; font-weight: bold; }
+        .chat-list-item { cursor: pointer; padding: 8px; border-radius: 5px; background: #34344c; margin-bottom: 5px; }
+        
+        /* Light Mode */
+        body.light-mode { background-color: white; color: black; }
+        .light-mode #sidebar { background: #f0f0f0; color: black; }
+        .light-mode #chat-container { background: white; }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            body { flex-direction: column; }
+            #sidebar { width: 100%; height: auto; }
+            #chat-container { height: 80vh; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div id="title">PosAIdon</div>
+    <div id="subtitle">System Safety Chatbot</div>
+    <button onclick="toggleTheme()">Toggle Theme</button>
+    <button onclick="newChat()">+ New chat</button>
+    <div id="chat-list"></div>
+</div>
+
+<div id="chat-container">
+    <div id="chat-box"></div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    let chats = JSON.parse(localStorage.getItem("chats")) || {};
+    let currentChat = localStorage.getItem("currentChat") || "chat_1";
+
+    function loadChatList() {
+        let chatList = document.getElementById("chat-list");
+        chatList.innerHTML = "";
+        Object.keys(chats).forEach(chatId => {
+            let chatItem = document.createElement("div");
+            chatItem.className = "chat-list-item";
+            chatItem.innerText = chatId.replace("chat_", "Chat ");
+            chatItem.onclick = () => switchChat(chatId);
+            chatList.appendChild(chatItem);
+        });
+    }
+
+    function switchChat(chatId) {
+        currentChat = chatId;
+        localStorage.setItem("currentChat", chatId);
+        fetch("/get_memory", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: currentChat })
+        })
+        .then(res => res.json())
+        .then(data => {
+            chats[currentChat] = data.chat_history;
+            displayChat();
+        });
+    }
+
+    function newChat() {
+        let newChatId = "chat_" + (Object.keys(chats).length + 1);
+        chats[newChatId] = [];
+        localStorage.setItem("chats", JSON.stringify(chats));
+        switchChat(newChatId);
+        loadChatList();
+    }
+
+    function displayChat() {
+        let chatBox = document.getElementById("chat-box");
+        chatBox.innerHTML = "";
+        if (!chats[currentChat]) chats[currentChat] = [];
+        chats[currentChat].forEach(({ sender, message }) => {
+            let messageDiv = document.createElement("div");
+            messageDiv.className = `chat-message ${sender}`;
+            messageDiv.innerHTML = marked.parse(message); // Markdown rendering
+            chatBox.appendChild(messageDiv);
+        });
+    }
+
+    function sendMessage() {
+        let input = document.getElementById("user-input");
+        let message = input.value.trim();
+        if (!message) return;
+
+        chats[currentChat].push({ sender: "user", message });
+        localStorage.setItem("chats", JSON.stringify(chats));
+        displayChat();
+
+        fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: currentChat, prompt: message })
+        })
+        .then(res => res.json())
+        .then(data => {
+            chats[currentChat].push({ sender: "bot", message: data.response });
+            localStorage.setItem("chats", JSON.stringify(chats));
+            displayChat();
+        });
+
+        input.value = "";
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle("light-mode");
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === "Enter") sendMessage();
+    }
+
+    loadChatList();
+    displayChat();
+</script>
+
+</body>
+</html>
