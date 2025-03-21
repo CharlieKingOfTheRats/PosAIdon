@@ -1,11 +1,9 @@
 from flask import Flask, request, jsonify, Response
 import sqlite3
-import json
 import time
 
 app = Flask(__name__)
 
-# Initialize the database
 def init_db():
     conn = sqlite3.connect("chat.db")
     c = conn.cursor()
@@ -16,7 +14,6 @@ def init_db():
 
 init_db()
 
-# Function to store messages in the database
 def save_message(chat_id, sender, message):
     conn = sqlite3.connect("chat.db")
     c = conn.cursor()
@@ -24,7 +21,6 @@ def save_message(chat_id, sender, message):
     conn.commit()
     conn.close()
 
-# Function to retrieve chat history
 def get_chat_history(chat_id):
     conn = sqlite3.connect("chat.db")
     c = conn.cursor()
@@ -41,15 +37,10 @@ def chat():
 
     save_message(chat_id, "user", prompt)
 
-    # Simulated streaming response
-    def generate():
-        response_text = f"I'm a bot! You said: {prompt}"  
-        save_message(chat_id, "bot", response_text)
-        for word in response_text.split():
-            yield word + " "
-            time.sleep(0.1)
+    bot_response = f"System Safety Response: {prompt}"
+    save_message(chat_id, "bot", bot_response)
 
-    return Response(generate(), content_type="text/plain")
+    return jsonify({"response": bot_response})
 
 @app.route("/get_memory", methods=["POST"])
 def get_memory():
