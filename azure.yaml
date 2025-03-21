@@ -1,0 +1,19 @@
+name: chat-app
+location: eastus
+type: containerapp
+tags: {}
+identity:
+  type: systemassigned
+properties:
+  kubeEnvironment: chat-env
+  configuration:
+    ingress:
+      external: true
+      targetPort: 5000
+  template:
+    containers:
+      - name: chat-container
+        image: ghcr.io/<YOUR_GITHUB_REPO>:latest
+        resources:
+          cpu: 0.5
+          memory: 1Gi
