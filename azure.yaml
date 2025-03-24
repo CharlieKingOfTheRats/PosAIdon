@@ -13,7 +13,7 @@ properties:
   template:
     containers:
       - name: chat-container
-        image: ghcr.io/<YOUR_GITHUB_REPO>:latest
+        image: ghcr.io/<PosAIdon>:latest
         resources:
           cpu: 0.5
           memory: 1Gi
