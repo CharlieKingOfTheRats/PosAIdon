@@ -2,6 +2,14 @@ from flask import Flask, request, jsonify, Response
 import sqlite3
 import time
 
+  from flask import Flask
+
+  app = Flask(__name__)
+
+  @app.route('/')
+  def home():
+      return "Hello, Azure!"
+
 app = Flask(__name__)
 
 def init_db():
