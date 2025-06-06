@@ -1,0 +1,17 @@
+📥 INPUT
+├── /USB/PDFs/
+│   └── textbook.pdf                 ← Your raw input file
+
+🔄 PROCESSING
+├── /USB/code/
+│   ├── chunker.py                  ← Loads and chunks PDFs
+│   └── embedder.py                 ← Converts chunks to vectors
+
+🧠 DATA STORAGE (on USB)
+├── /USB/database/
+│   ├── chunks.db                   ← SQLite DB of text chunks
+│   └── faiss_index/                ← FAISS vector index directory
+
+📤 QUERY (RAG Call)
+├── /USB/code/
+│   └── rag_query.py                ← Queries `faiss_index/` and returns answers
